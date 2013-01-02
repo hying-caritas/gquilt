@@ -1,0 +1,57 @@
+#!/bin/sh
+
+set -e
+
+prog=$(basename $0)
+
+usage()
+{
+    echo "Usage: $prog [ -o patches dir ] <since> | <revision range>"
+}
+
+patch_dir=patches
+subject_prefix="PATCH"
+
+while getopts "o:h:s:" OPTION
+do
+    echo $OPTION
+    case $OPTION in
+	o)
+	    patch_dir=$OPTARG
+	    ;;
+	s)
+	    subject_prefix=$OPTARG
+	    ;;
+	h)
+	    usage
+	    exit 0
+	    ;;
+	?)
+	    usage
+	    exit 1
+	    ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+if [ $# -ne 1 -a $# -ne 2 ]; then
+    usage
+    exit 1
+fi
+
+since=$(git rev-parse $1)
+if [ $# -eq 2 ]; then
+    until=$(git rev-parse $2)
+else
+    until=$(git rev-parse HEAD)
+fi
+
+if [ -d $patch_dir ]; then
+    echo "patches directory exist in current directory, please check again"
+    exit 2
+fi
+
+echo -e "\ncheck out patches via git format-patch"
+mkdir $patch_dir
+git format-patch -o $patch_dir --subject-prefix="$subject_prefix" $since..$until
+(cd $patch_dir; ls [0-9][0-9]* | sort > series)

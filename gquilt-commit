@@ -1,0 +1,38 @@
+#!/bin/sh
+
+set -e
+
+prog=$(basename $0)
+
+usage()
+{
+	echo "Usage: $prog"
+}
+
+series=$(quilt series)
+if [ -z "$series" ]; then
+	echo "Error: $prog should be used in quilt/git work tree!"
+	exit 1
+fi
+
+echo -e "\nquilt push ..."
+quilt push -a || true
+
+echo -e "\nquilt pop ..."
+quilt pop -a
+
+echo -e "\ngit reset"
+git reset
+
+name=$(git config --get user.name)
+email=$(git config --get user.email)
+
+echo -e "\ngit quiltimport"
+if ! git quiltimport --author "$name <$email>"; then
+	git am --abort >& /dev/null
+	exit 2
+fi
+
+echo -e "\nrm quilt files"
+rm -rf patches
+rm -rf .pc

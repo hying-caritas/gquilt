@@ -1,0 +1,51 @@
+#!/bin/sh
+
+set -e
+
+prog=$(basename $0)
+
+usage()
+{
+	echo "Usage: $prog <rev_spec>"
+}
+
+git_current_branch()
+{
+	git branch | grep '\*' | cut -d ' ' -f 2
+}
+
+if [ $# -ne 1 ]; then
+	usage
+	exit 1
+fi
+
+if [ -d patches ]; then
+	echo "patches directory exist in current directory, please check again"
+	exit 2
+fi
+
+rev_spec=$1
+new_head=$(git rev-parse $rev_spec)
+
+echo -e "\ncheck out patches via git format-patch"
+mkdir patches
+git format-patch -o patches $new_head
+(cd patches; ls [0-9][0-9]* | sort > series)
+
+current_branch=$(git_current_branch)
+if [ "$current_branch" == master ]; then
+	echo "do not work on master branch for quilt"
+	exit 3
+fi
+
+echo -e "\ncreate and check out to tmp branch"
+if git branch | grep gquilt-tmp > /dev/null; then
+	git branch -D gquilt-tmp
+fi
+git branch gquilt-tmp
+git checkout gquilt-tmp
+
+echo -e "\nrevert current branch to specified reversion"
+git branch -d $current_branch
+git branch $current_branch $new_head
+git checkout $current_branch

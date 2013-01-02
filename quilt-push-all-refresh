@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -e
+
+quilt pop -a
+
+for p in $(quilt series); do
+	quilt push
+	quilt refresh
+done
