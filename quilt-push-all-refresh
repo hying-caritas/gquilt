@@ -2,6 +2,9 @@
 
 set -e
 
+if quilt unapplied >& /dev/null; then
+	quilt push -a
+fi
 quilt pop -a
 
 for p in $(quilt series); do
