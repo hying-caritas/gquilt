@@ -24,8 +24,12 @@ quilt pop -a
 echo -e "\ngit reset"
 git reset
 
-name=$(git config --get user.name)
-email=$(git config --get user.email)
+name="$GIT_AUTHOR_NAME"
+[ -z "$name" ] && name="$GIT_COMMITTER_NAME"
+[ -z "$name" ] && name=$(git config --get user.name)
+email="$GIT_AUTHOR_EMAIL"
+[ -z "$email" ] && email="$GIT_COMMITTER_EMAIL"
+[ -z "$email" ] && email=$(git config --get user.email)
 
 echo -e "\ngit quiltimport"
 if ! git quiltimport --author "$name <$email>"; then
